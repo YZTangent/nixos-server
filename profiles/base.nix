@@ -33,7 +33,7 @@
 
   # sops-nix
   sops = {
-    defaultSopsFile = ../../secrets/${config.networking.hostName}.yaml;
+    defaultSopsFile = ../secrets/${config.networking.hostName}.yaml;
     age.keyFile = "/var/lib/sops-nix/key.txt";
   };
 
