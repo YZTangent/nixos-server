@@ -6,6 +6,7 @@ let
     lidarr = 8686;
     readarr = 8787;
     transmission = 9091;
+    immich = 2283;
   };
 in
 {
@@ -59,6 +60,14 @@ in
         incomplete-dir = "/data/media/torrents/incomplete";
         rpc-whitelist = "127.0.0.1,10.0.0.*";
       };
+    };
+
+    services.immich = {
+      enable = true;
+      host = "0.0.0.0";
+      port = 2283;
+      openFirewall = true;
+      mediaLocation = "/data/media/immich";
     };
 
     networking.firewall.allowedTCPPorts = builtins.attrValues ports;
