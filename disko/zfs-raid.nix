@@ -29,7 +29,6 @@
           compression = "zstd";
           "com.sun:auto-snapshot" = "false";
         };
-        disks = builtins.genList (i: "data${toString (i + 1)}") diskCount;
         datasets = {
           data = {
             type = "zfs_fs";

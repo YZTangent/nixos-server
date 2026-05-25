@@ -1,6 +1,7 @@
 { inputs, ... }:
 {
   networking.hostName = "itx-5825u";
+  networking.hostId = "deadbeef";
 
   imports = [
     ./disko.nix
