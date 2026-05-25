@@ -1,8 +1,10 @@
-{ inputs, ... }: {
+{ ... }:
+{
   networking.hostName = "n95";
+  networking.hostId = "cafebabe";
 
   imports = [
-    ./hardware.nix
+    ./disko.nix
     ../../profiles/base.nix
   ];
 }
