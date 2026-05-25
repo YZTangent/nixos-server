@@ -3,6 +3,7 @@
 {
   imports = [
     inputs.sops-nix.nixosModules.sops
+    inputs.disko.nixosModules.disko
   ];
 
   # Locale
