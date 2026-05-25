@@ -11,7 +11,10 @@
           partitions = {
             zfs = {
               size = "100%";
-              content = { type = "zfs"; };
+              content = {
+                type = "zfs";
+                pool = poolName;
+              };
             };
           };
         };
