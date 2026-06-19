@@ -4,7 +4,7 @@
   networking.hostId = "cafebabe";
 
   imports = [
-    ./disko.nix
     ../../profiles/base.nix
+    ../../profiles/nas.nix
   ];
 }
