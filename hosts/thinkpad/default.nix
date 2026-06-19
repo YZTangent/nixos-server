@@ -5,6 +5,5 @@
   imports = [
     ../../profiles/base.nix
     ../../profiles/compute.nix
-    ../../profiles/first-node.nix
   ];
 }
