@@ -4,6 +4,7 @@
   imports = [
     inputs.sops-nix.nixosModules.sops
     inputs.disko.nixosModules.disko
+    ../disko/os-ext4.nix
   ];
 
   # Locale
