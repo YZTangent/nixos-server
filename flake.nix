@@ -17,19 +17,19 @@
 
   outputs = { nixpkgs, disko, nixos-anywhere, ... } @ inputs: {
     nixosConfigurations = {
-      thinkpad = nixpkgs.lib.nixosSystem {
+      compute = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        modules = [ ./hosts/thinkpad ];
+        modules = [ ./hosts/compute ];
         specialArgs = { inherit inputs; };
       };
-      itx-5825u = nixpkgs.lib.nixosSystem {
+      server = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        modules = [ ./hosts/itx-5825u ];
+        modules = [ ./hosts/server ];
         specialArgs = { inherit inputs; };
       };
-      n95 = nixpkgs.lib.nixosSystem {
+      storage = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        modules = [ ./hosts/n95 ];
+        modules = [ ./hosts/storage ];
         specialArgs = { inherit inputs; };
       };
     };
