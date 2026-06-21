@@ -27,7 +27,7 @@
     isNormalUser = true;
     extraGroups = [ "wheel" ];
     openssh.authorizedKeys.keys = [
-      # TODO: add your public key
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF9bbfpFPn0zjFj6/NTKXWqkAe9avhGTdDY/dBxF7UKH yztangent@nixos"
     ];
   };
 
