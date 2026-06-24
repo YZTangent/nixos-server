@@ -2,10 +2,11 @@
 
 ## Overview
 
-A NixOS flake-based configuration for a multi-node headless server cluster with two machine roles:
+A NixOS flake-based configuration for a multi-node headless server cluster with three machine roles:
 
 - **Compute nodes**: Run workloads via k3s, no local persistence
 - **NAS nodes**: Compute + storage services (file sharing, media, backup)
+- **AI nodes**: Compute + self-hosted LLM inference via llama.cpp (router mode, Vulkan backend)
 
 ## Machine Inventory
 
@@ -15,7 +16,7 @@ A NixOS flake-based configuration for a multi-node headless server cluster with 
 | `itx-5825u` | ITX R7 5825U | `base` + `compute` + `nas` | server (control plane + worker) |
 | (future) | N95 + 4 HDDs | `base` + `nas` | none (no compute profile) |
 
-Only nodes with the `compute` profile join the k3s cluster.
+Only nodes with the `compute` profile join the k3s cluster. The `ai` profile is layered on top of `compute` (an AI node is also a compute node) and adds the llama.cpp inference service.
 
 Profiles are **non-intersecting sets** — each composition is explicit in the host config.
 
@@ -33,13 +34,15 @@ Profiles are **non-intersecting sets** — each composition is explicit in the h
 ├── profiles/
 │   ├── base.nix                # SSH, users, locale, kernel, sops-nix
 │   ├── compute.nix             # k3s server, monitoring agent
-│   └── nas.nix                 # file sharing, media, backup
+│   ├── nas.nix                 # file sharing, media, backup
+│   └── ai.nix                  # llama.cpp inference (router mode, Vulkan)
 ├── services/
 │   ├── k3s.nix                 # k3s server install + cluster join
 │   ├── monitoring-agent.nix    # node exporter, promtail
 │   ├── file-sharing.nix        # samba/nfs
 │   ├── media-stack.nix         # jellyfin + *arr
-│   └── backup-target.nix       # borgbackup server
+│   ├── backup-target.nix       # borgbackup server
+│   └── llama-cpp.nix           # llama-server systemd service (router mode)
 ├── k8s/
 │   └── dns/
 │       ├── deployment.yaml     # AdGuard Home Deployment
@@ -77,6 +80,14 @@ Profiles are **non-intersecting sets** — each composition is explicit in the h
 - Imports `services/media-stack.nix`
 - Imports `services/backup-target.nix`
 
+### `ai.nix` — LLM inference
+
+- Imports `services/llama-cpp.nix`
+- Enables one `llama-server` instance (router mode) on port `11434`, Vulkan backend
+- Models live in `/var/lib/llama-cpp/models/` — GGUFs dropped in via the `hf` CLI are loaded on demand by the `model` field of OpenAI-compatible API requests, no service restart
+- Daemon is healthy with an empty models dir; no `modelPath` is pinned
+- Installs Hermes Agent (from the `numtide/llm-agents.nix` flake input) as a CLI tool on the system PATH — no service, configured interactively by the operator via `hermes setup`
+
 ## Services
 
 ### `k3s.nix`
@@ -104,6 +115,19 @@ Profiles are **non-intersecting sets** — each composition is explicit in the h
 - borgbackup server (SSH-based, append-only repos)
 - Separate borg user with restricted shell
 - Backup schedules via systemd timers
+
+### `llama-cpp.nix`
+- Runs llama.cpp's `llama-server` as a host systemd service in router mode (`--models-dir`, no pinned `-m`)
+- Daemon starts healthy with an empty models directory; GGUFs dropped into `/var/lib/llama-cpp/models/` are loaded on demand based on the `model` field of OpenAI-compatible API requests
+- `services.llama-cpp.instances` (attrsOf) — one systemd service + open port per instance, each with its own `modelsDir`/`port`/`extraArgs` (backend flags like `-ngl 99`, `--backend vulkan`)
+- Runs as an unprivileged `llama` system user with systemd hardening (`ProtectSystem=strict`, `PrivateTmp`, etc.)
+- Installs `llama-cpp` built with Vulkan support (full package — `llama-server`, `llama-cli`, `llama-bench`, `llama-quantize`) and `python3Packages.huggingface-hub` (provides the `hf` CLI) for ad-hoc model pulls
+
+## Additional Flake Inputs
+
+### `numtide/llm-agents.nix`
+
+A daily-updated flake providing Nix packages for AI coding agents and tools not yet in nixpkgs. Used to install Hermes Agent (Nous Research) on AI-profile hosts. Follows `nixpkgs` to avoid a second copy of nixpkgs in the closure.
 
 ### DNS (k3s deployment, optional)
 
