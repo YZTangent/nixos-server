@@ -12,19 +12,59 @@
       default = "eth0";
       description = "Network interface for flannel VXLAN traffic";
     };
+    vip = lib.mkOption {
+      type = lib.types.str;
+      default = "192.168.1.200";
+      description = "Virtual IP for k3s API server, managed by keepalived";
+    };
+    isFirstNode = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Whether this node bootstraps the k3s cluster with --cluster-init";
+    };
   };
 
   config = lib.mkIf config.services.k3s-server.enable {
     sops.secrets."k3s-token".restartUnits = [ "k3s.service" ];
+    sops.secrets."k3s-vrrp-password" = {};
 
-    environment.systemPackages = with pkgs; [ k3s nfs-utils ];
+    sops.templates."k3s-vrrp-env" = {
+      content = "VRRP_PASSWORD=$k3s-vrrp-password";
+    };
+
+    environment.systemPackages = with pkgs; [ k3s nfs-utils keepalived ];
 
     services.k3s = {
       enable = true;
       role = "server";
       tokenFile = config.sops.secrets."k3s-token".path;
-      serverAddr = config.services.k3s-server.serverAddr;
+      serverAddr = if config.services.k3s-server.isFirstNode
+                   then ""
+                   else "https://${config.services.k3s-server.vip}:6443";
+      clusterInit = config.services.k3s-server.isFirstNode;
       extraFlags = "--flannel-iface=${config.services.k3s-server.flannelIface}";
+    };
+
+    services.keepalived = {
+      enable = true;
+      openFirewall = true;
+      secretFile = config.sops.templates."k3s-vrrp-env".path;
+      vrrpInstances.k3s = {
+        interface = config.services.k3s-server.flannelIface;
+        state = "BACKUP";
+        virtualRouterId = 50;
+        priority = if config.services.k3s-server.isFirstNode then 150 else 100;
+        virtualIps = [{
+          addr = "${config.services.k3s-server.vip}/24";
+          dev = config.services.k3s-server.flannelIface;
+        }];
+        extraConfig = ''
+          authentication {
+              auth_type PASS
+              auth_pass ''${VRRP_PASSWORD}
+          }
+        '';
+      };
     };
 
     networking.firewall = {

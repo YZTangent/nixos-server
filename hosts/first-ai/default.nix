@@ -8,4 +8,6 @@
     ../../profiles/compute.nix
     ../../profiles/ai.nix
   ];
+
+  services.k3s-server.isFirstNode = true;
 }

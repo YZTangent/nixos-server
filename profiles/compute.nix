@@ -7,7 +7,8 @@
 
   services.k3s-server = {
     enable = true;
-    serverAddr = "https://10.0.0.1:6443";  # TODO: set to actual first node IP
+    # serverAddr is auto-configured from services.k3s-server.vip (default 192.168.1.200).
+    # Override vip below if your LAN subnet differs.
   };
 
   services.monitoring-agent.enable = true;

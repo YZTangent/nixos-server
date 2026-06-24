@@ -32,6 +32,21 @@
         modules = [ ./hosts/storage ];
         specialArgs = { inherit inputs; };
       };
+      ai = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ ./hosts/ai ];
+        specialArgs = { inherit inputs; };
+      };
+      first-ai = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ ./hosts/first-ai ];
+        specialArgs = { inherit inputs; };
+      };
+      first-server = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ ./hosts/first-server ];
+        specialArgs = { inherit inputs; };
+      };
     };
     packages.x86_64-linux = {
       inherit (nixos-anywhere.packages.x86_64-linux) nixos-anywhere;
