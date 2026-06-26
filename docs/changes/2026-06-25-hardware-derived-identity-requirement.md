@@ -60,7 +60,7 @@ nixos-anywhere \
 
 ### Default behavior: placeholder + assertion (Option 3)
 
-The placeholder keeps `flake.lock` resolution, `nix flake show`, `nix flake check`, and IDE tooling working without an override. A NixOS assertion in `profiles/base.nix` fails the build when the placeholder is in effect:
+The placeholder keeps `flake.lock` resolution, `nix flake show`, and IDE tooling working without an override. A NixOS assertion in `profiles/base.nix` fails the build when the placeholder is in effect:
 
 ```nix
 # profiles/base.nix
@@ -80,7 +80,8 @@ Behavior matrix:
 
 | Invocation | Result |
 |---|---|
-| `nix flake show` / `nix flake check` | Works (flake-lock resolves against placeholder) |
+| `nix flake show` | Works (flake-lock resolves against placeholder) |
+| `nix flake check` | Fails — check forces `system.build.toplevel`, which trips the assertion. Use `nix flake check --override-input device-id path:<real-dir>` to pass. |
 | `nixos-rebuild build --flake .#compute` (no override) | Fails at eval with the assertion message |
 | Provisioning wrapper (`nix run .#provision`) | Override supplied automatically, builds the real per-instance closure |
 

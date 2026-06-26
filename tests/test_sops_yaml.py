@@ -2,7 +2,7 @@ import pathlib
 import textwrap
 from provision.sops_yaml import add_age_key, find_role_key_group
 
-SAMPLE_YAML = textwrap.dedent("""\
+SAMPLE_YAML = textwrap.dedent(r"""
     keys:
       - &compute-a1b2c3d4 age1qzv...
 
@@ -14,7 +14,7 @@ SAMPLE_YAML = textwrap.dedent("""\
       - path_regex: secrets/server-.*\.yaml$
         key_groups:
           - age: []
-""")
+""").lstrip()
 
 def test_find_role_key_group_returns_index_for_existing_role(tmp_path):
     f = tmp_path / ".sops.yaml"
