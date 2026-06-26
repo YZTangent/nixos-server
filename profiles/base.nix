@@ -1,5 +1,8 @@
 { config, pkgs, lib, inputs, ... }:
 
+let
+  device-id = import inputs.device-id;
+in
 {
   imports = [
     inputs.sops-nix.nixosModules.sops
@@ -9,7 +12,7 @@
   ];
 
   assertions = [{
-    assertion = (import inputs.device-id).hostname != "unknown";
+    assertion = device-id.hostname != "unknown";
     message = ''
       device-id input not overridden.
       This closure would be built with hostname="unknown", which is the placeholder default.
@@ -47,7 +50,7 @@
 
   # sops-nix
   sops = {
-    defaultSopsFile = ../secrets/${config.device-identity.role}-${(import inputs.device-id).hostname}.yaml;
+    defaultSopsFile = ../secrets/${config.device-identity.role}-${device-id.hostname}.yaml;
     age.keyFile = "/var/lib/sops-nix/key.txt";
   };
 
