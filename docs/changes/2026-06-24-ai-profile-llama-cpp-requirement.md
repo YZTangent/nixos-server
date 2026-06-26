@@ -109,5 +109,5 @@ And in each `nixosSystem` call (or globally in the `outputs` attrset), `specialA
 
 ## Related spec / ADR
 
-- Updates `docs/prd/2026-05-25-nixos-server-config.md` — adds the `ai` profile and `services/llama-cpp.nix` to the inventory/structure.
+- No spec file yet; documentation cleanup will belong to a separate change of its own.
 - New ADR `docs/adr/0004-llama-cpp-as-host-systemd-service.md` — records why llama.cpp runs as a host systemd service in router mode rather than a k3s workload, and why Vulkan over NPU for now.
