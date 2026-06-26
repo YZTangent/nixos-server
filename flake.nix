@@ -31,8 +31,34 @@
         specialArgs = { inherit inputs; };
       };
     }) hostDirs);
-    packages.x86_64-linux = {
+    packages.x86_64-linux = let
+      pkgs = nixpkgs.legacyPackages.x86_64-linux;
+    in {
       inherit (nixos-anywhere.packages.x86_64-linux) nixos-anywhere;
+      provision = pkgs.python3Packages.buildPythonApplication {
+        pname = "provision";
+        version = "0.1.0";
+        pyproject = true;
+        src = ./.;
+        nativeBuildInputs = [ pkgs.python3Packages.setuptools ];
+        propagatedBuildInputs = [ pkgs.python3Packages.pyyaml ];
+        nativeCheckInputs = [ pkgs.python3Packages.pytestCheckHook ];
+        pytestFlagsArray = [ "tests/" ];
+
+        # Runtime dependencies: provision.py shells out to these tools.
+        # makeWrapper puts them on PATH so `nix run .#provision` works without
+        # the user having them installed separately.
+        postInstall = ''
+          wrapProgram $out/bin/provision \
+            --prefix PATH : ${pkgs.lib.makeBinPath [
+              pkgs.age
+              pkgs.sops
+              nixos-anywhere.packages.x86_64-linux.nixos-anywhere
+              pkgs.git
+              pkgs.openssh
+            ]}
+        '';
+      };
     };
   };
 }
