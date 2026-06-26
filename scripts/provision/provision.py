@@ -6,7 +6,6 @@ import hashlib
 import pathlib
 import shutil
 import subprocess
-import sys
 import tempfile
 
 from provision.sops_yaml import add_age_key
