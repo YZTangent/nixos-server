@@ -1,10 +1,10 @@
 { config, pkgs, lib, inputs, ... }:
 {
   imports = [
-    ../services/llama-cpp.nix
+    ../services/llama-server.nix
   ];
 
-  services.llama-cpp = {
+  services.llama-server = {
     enable = true;
     instances.chat = {
       port = 11434;

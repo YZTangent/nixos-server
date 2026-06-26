@@ -1,7 +1,7 @@
 { config, pkgs, lib, ... }:
 
 let
-  cfg = config.services.llama-cpp;
+  cfg = config.services.llama-server;
 
   instanceModule = { name, config, ... }: {
     options = {
@@ -33,7 +33,7 @@ let
   };
 in
 {
-  options.services.llama-cpp = {
+  options.services.llama-server = {
     enable = lib.mkEnableOption "llama.cpp inference server (router mode)";
 
     instances = lib.mkOption {
