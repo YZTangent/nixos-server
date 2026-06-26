@@ -71,5 +71,29 @@ in
 
     networking.firewall.allowedTCPPorts =
       lib.mapAttrsToList (_: i: i.port) cfg.instances;
+
+    systemd.services = lib.mapAttrs' (name: inst:
+      lib.nameValuePair "llama-cpp-${name}" {
+        description = "llama.cpp inference server (instance: ${name})";
+        after = [ "network.target" ];
+        wantedBy = [ "multi-user.target" ];
+
+        serviceConfig = {
+          ExecStart = "${pkgs.llama-cpp-vulkan}/bin/llama-server "
+                    + lib.concatStringsSep " " ([
+                      "--models-dir" inst.modelsDir
+                      "--host" inst.host
+                      "--port" (toString inst.port)
+                    ] ++ inst.extraArgs);
+          User = inst.user;
+          Group = "llama";
+          Restart = "on-failure";
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          PrivateTmp = true;
+          ReadWritePaths = [ "/var/lib/llama-cpp" ];
+        };
+      }
+    ) cfg.instances;
   };
 }
