@@ -42,4 +42,34 @@ in
       description = "One systemd service + open port per instance";
     };
   };
+
+  config = lib.mkIf cfg.enable {
+    # Build llama-cpp with Vulkan support for the Radeon 8060S iGPU
+    nixpkgs.overlays = [
+      (final: prev: {
+        llama-cpp-vulkan = prev.llama-cpp.override { vulkanSupport = true; };
+      })
+    ];
+
+    environment.systemPackages = with pkgs; [
+      llama-cpp-vulkan
+      python3Packages.huggingface-hub
+    ];
+
+    users.users.llama = {
+      isSystemUser = true;
+      group = "llama";
+      home = "/var/lib/llama-cpp";
+      createHome = true;
+      shell = "/run/current-system/sw/bin/nologin";
+    };
+    users.groups.llama = {};
+
+    systemd.tmpfiles.rules = [
+      "d /var/lib/llama-cpp/models 0755 llama llama -"
+    ];
+
+    networking.firewall.allowedTCPPorts =
+      lib.mapAttrsToList (_: i: i.port) cfg.instances;
+  };
 }
