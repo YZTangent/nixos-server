@@ -13,6 +13,10 @@
       url = "github:nix-community/nixos-anywhere";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    device-id = {
+      url = "path:./device-id";
+      flake = false;
+    };
   };
 
   outputs = { nixpkgs, disko, nixos-anywhere, ... } @ inputs: {

@@ -1,5 +1,17 @@
 {
   "nodes": {
+    "device-id": {
+      "flake": false,
+      "locked": {
+        "path": "./device-id",
+        "type": "path"
+      },
+      "original": {
+        "path": "./device-id",
+        "type": "path"
+      },
+      "parent": []
+    },
     "disko": {
       "inputs": {
         "nixpkgs": [
@@ -170,6 +182,7 @@
     },
     "root": {
       "inputs": {
+        "device-id": "device-id",
         "disko": "disko",
         "nixos-anywhere": "nixos-anywhere",
         "nixpkgs": "nixpkgs",
