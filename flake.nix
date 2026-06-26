@@ -20,38 +20,17 @@
   };
 
   outputs = { nixpkgs, disko, nixos-anywhere, ... } @ inputs: {
-    nixosConfigurations = {
-      compute = nixpkgs.lib.nixosSystem {
+    nixosConfigurations = let
+      lib = nixpkgs.lib;
+      hostDirs = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./hosts));
+    in builtins.listToAttrs (map (name: {
+      inherit name;
+      value = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        modules = [ ./hosts/compute ];
+        modules = [ ./hosts/${name} ];
         specialArgs = { inherit inputs; };
       };
-      server = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [ ./hosts/server ];
-        specialArgs = { inherit inputs; };
-      };
-      storage = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [ ./hosts/storage ];
-        specialArgs = { inherit inputs; };
-      };
-      ai = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [ ./hosts/ai ];
-        specialArgs = { inherit inputs; };
-      };
-      first-ai = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [ ./hosts/first-ai ];
-        specialArgs = { inherit inputs; };
-      };
-      first-server = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [ ./hosts/first-server ];
-        specialArgs = { inherit inputs; };
-      };
-    };
+    }) hostDirs);
     packages.x86_64-linux = {
       inherit (nixos-anywhere.packages.x86_64-linux) nixos-anywhere;
     };
