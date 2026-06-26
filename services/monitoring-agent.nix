@@ -20,6 +20,10 @@
       port = 9100;
     };
 
+    # TODO: promtail was removed from nixpkgs (EOL). Migrate to grafana-alloy
+    # (services.alloy.enable) or fluent-bit in a future change.
+    # https://grafana.com/docs/alloy/latest/set-up/migrate/
+    /*
     services.promtail = {
       enable = true;
       configuration = {
@@ -36,5 +40,6 @@
         }];
       };
     };
+    */
   };
 }
