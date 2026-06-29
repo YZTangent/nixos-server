@@ -1,11 +1,26 @@
 { config, pkgs, lib, inputs, ... }:
 
+let
+  device-id = import inputs.device-id;
+in
 {
   imports = [
     inputs.sops-nix.nixosModules.sops
     inputs.disko.nixosModules.disko
     ../disko/os-ext4.nix
+    ../modules/device-identity.nix
   ];
+
+  assertions = [{
+    assertion = device-id.hostname != "unknown";
+    message = ''
+      device-id input not overridden.
+      This closure would be built with hostname="unknown", which is the placeholder default.
+      Supply the per-instance device-id at build time:
+        nixos-anywhere --flake ".#<host>" --override-input device-id path:/tmp/device-<hash> ...
+      See docs/changes/2026-06-25-hardware-derived-identity-requirement.md for the provisioning wrapper.
+    '';
+  }];
 
   # Locale
   i18n.defaultLocale = "en_US.UTF-8";
@@ -35,7 +50,7 @@
 
   # sops-nix
   sops = {
-    defaultSopsFile = ../secrets/${config.networking.hostName}.yaml;
+    defaultSopsFile = ../secrets/${config.device-identity.role}-${device-id.hostname}.yaml;
     age.keyFile = "/var/lib/sops-nix/key.txt";
   };
 

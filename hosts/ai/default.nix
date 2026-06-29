@@ -1,11 +1,1 @@
-{ inputs, ... }:
-{
-  networking.hostName = "strix-halo";
-  networking.hostId = "b0facade";
-
-  imports = [
-    ../../profiles/base.nix
-    ../../profiles/compute.nix
-    ../../profiles/ai.nix
-  ];
-}
+{ inputs, ... }: import ../mk-host.nix { inherit inputs; } { role = "ai"; }

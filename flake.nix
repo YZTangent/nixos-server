@@ -17,43 +17,52 @@
       url = "github:numtide/llm-agents.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    device-id = {
+      url = "path:./device-id";
+      flake = false;
+    };
   };
 
   outputs = { nixpkgs, disko, nixos-anywhere, ... } @ inputs: {
-    nixosConfigurations = {
-      compute = nixpkgs.lib.nixosSystem {
+    nixosConfigurations = let
+      lib = nixpkgs.lib;
+      hostDirs = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./hosts));
+    in builtins.listToAttrs (map (name: {
+      inherit name;
+      value = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        modules = [ ./hosts/compute ];
+        modules = [ ./hosts/${name} ];
         specialArgs = { inherit inputs; };
       };
-      server = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [ ./hosts/server ];
-        specialArgs = { inherit inputs; };
-      };
-      storage = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [ ./hosts/storage ];
-        specialArgs = { inherit inputs; };
-      };
-      ai = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [ ./hosts/ai ];
-        specialArgs = { inherit inputs; };
-      };
-      first-ai = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [ ./hosts/first-ai ];
-        specialArgs = { inherit inputs; };
-      };
-      first-server = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [ ./hosts/first-server ];
-        specialArgs = { inherit inputs; };
-      };
-    };
-    packages.x86_64-linux = {
+    }) hostDirs);
+    packages.x86_64-linux = let
+      pkgs = nixpkgs.legacyPackages.x86_64-linux;
+    in {
       inherit (nixos-anywhere.packages.x86_64-linux) nixos-anywhere;
+      provision = pkgs.python3Packages.buildPythonApplication {
+        pname = "provision";
+        version = "0.1.0";
+        pyproject = true;
+        src = ./.;
+        nativeBuildInputs = [ pkgs.python3Packages.setuptools ];
+        propagatedBuildInputs = [ pkgs.python3Packages.pyyaml ];
+        nativeCheckInputs = [ pkgs.python3Packages.pytestCheckHook ];
+        pytestFlagsArray = [ "tests/" ];
+
+        # Runtime dependencies: provision.py shells out to these tools.
+        # makeWrapper puts them on PATH so `nix run .#provision` works without
+        # the user having them installed separately.
+        postInstall = ''
+          wrapProgram $out/bin/provision \
+            --prefix PATH : ${pkgs.lib.makeBinPath [
+              pkgs.age
+              pkgs.sops
+              nixos-anywhere.packages.x86_64-linux.nixos-anywhere
+              pkgs.git
+              pkgs.openssh
+            ]}
+        '';
+      };
     };
   };
 }

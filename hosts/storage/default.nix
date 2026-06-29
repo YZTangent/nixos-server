@@ -1,10 +1,1 @@
-{ ... }:
-{
-  networking.hostName = "n95";
-  networking.hostId = "cafebabe";
-
-  imports = [
-    ../../profiles/base.nix
-    ../../profiles/nas.nix
-  ];
-}
+{ inputs, ... }: import ../mk-host.nix { inherit inputs; } { role = "storage"; }
