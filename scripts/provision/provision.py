@@ -123,13 +123,18 @@ def main() -> None:
         # 5. Create or update the per-instance sops file
         sops_secret_file = repo_root / "secrets" / f"{args.role}-{hash_value}.yaml"
         if not sops_secret_file.exists():
-            template = repo_root / "secrets" / f"{args.role}-template.yaml"
-            if template.exists():
-                shutil.copy(template, sops_secret_file)
-            else:
-                sops_secret_file.write_text("")
+            template = repo_root / "secrets" / f"{args.role}-secrets.yaml"
+            if not template.exists():
+                raise FileNotFoundError(
+                    f"Missing secrets template: {template}\n"
+                    f"Create it with the plaintext secrets for role '{args.role}' "
+                    f"(it will be gitignored)."
+                )
+            subprocess.run(
+                ["sops", "encrypt", "--output", str(sops_secret_file), str(template)],
+                check=True,
+            )
             print(f"Created {sops_secret_file}")
-        subprocess.run(["sops", "updatekeys", str(sops_secret_file)], check=True)
 
         # 6. Commit and push
         subprocess.run(
