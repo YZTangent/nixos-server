@@ -23,7 +23,34 @@
     };
   };
 
-  outputs = { nixpkgs, disko, nixos-anywhere, ... } @ inputs: {
+  outputs = { self, nixpkgs, disko, nixos-anywhere, ... } @ inputs: {
+    nixosModules = {
+      llama-server = ./services/llama-server.nix;
+      k3s = ./services/k3s.nix;
+      media-stack = ./services/media-stack.nix;
+      file-sharing = ./services/file-sharing.nix;
+      backup-target = ./services/backup-target.nix;
+      monitoring-agent = ./services/monitoring-agent.nix;
+
+      ai = { pkgs, ... }: {
+        imports = [ self.nixosModules.llama-server ];
+        environment.systemPackages = [
+          inputs.llm-agents.packages.${pkgs.system}.hermes-agent
+        ];
+      };
+
+      default = { ... }: {
+        imports = [
+          self.nixosModules.llama-server
+          self.nixosModules.k3s
+          self.nixosModules.media-stack
+          self.nixosModules.file-sharing
+          self.nixosModules.backup-target
+          self.nixosModules.monitoring-agent
+        ];
+      };
+    };
+
     nixosConfigurations = let
       lib = nixpkgs.lib;
       hostDirs = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./hosts));
