@@ -63,5 +63,20 @@ in
     "jellyfin-ffmpeg"
   ];
 
+  # Cloudflare Host Tunnel (Unique per machine)
+  sops.secrets."cloudflared/host-tunnel.json" = {};
+  
+  services.cloudflared = {
+    enable = true;
+    tunnels = {
+      "host-${device-id.hostname}" = {
+        credentialsFile = config.sops.secrets."cloudflared/host-tunnel.json".path;
+        default = "http_status:404";
+        warp-routing.enabled = true;
+      };
+    };
+  };
+  environment.systemPackages = [ pkgs.cloudflared ];
+
   system.stateVersion = "26.05";
 }
