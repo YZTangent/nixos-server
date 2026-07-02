@@ -1,1 +1,1 @@
-{ inputs, ... }: import ../mk-host.nix { inherit inputs; } { role = "server"; }
+args@{ inputs, ... }: import ../mk-host.nix { inherit inputs; } { role = "server"; } args

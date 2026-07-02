@@ -18,7 +18,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     device-id = {
-      url = "path:./device-id";
+      url = "path:./device-id/default";
       flake = false;
     };
   };
@@ -35,7 +35,7 @@
       ai = { pkgs, ... }: {
         imports = [ self.nixosModules.llama-server ];
         environment.systemPackages = [
-          inputs.llm-agents.packages.${pkgs.system}.hermes-agent
+          inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.hermes-agent
         ];
       };
 
@@ -74,7 +74,7 @@
         nativeBuildInputs = [ pkgs.python3Packages.setuptools ];
         propagatedBuildInputs = [ pkgs.python3Packages.pyyaml ];
         nativeCheckInputs = [ pkgs.python3Packages.pytestCheckHook ];
-        pytestFlagsArray = [ "tests/" ];
+        pytestFlags = [ "tests/" ];
 
         # Runtime dependencies: provision.py shells out to these tools.
         # makeWrapper puts them on PATH so `nix run .#provision` works without
