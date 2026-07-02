@@ -61,11 +61,11 @@
     "device-id": {
       "flake": false,
       "locked": {
-        "path": "./device-id",
+        "path": "./device-id/default",
         "type": "path"
       },
       "original": {
-        "path": "./device-id",
+        "path": "./device-id/default",
         "type": "path"
       },
       "parent": []

@@ -18,12 +18,39 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     device-id = {
-      url = "path:./device-id";
+      url = "path:./device-id/default";
       flake = false;
     };
   };
 
-  outputs = { nixpkgs, disko, nixos-anywhere, ... } @ inputs: {
+  outputs = { self, nixpkgs, disko, nixos-anywhere, ... } @ inputs: {
+    nixosModules = {
+      llama-server = ./services/llama-server.nix;
+      k3s = ./services/k3s.nix;
+      media-stack = ./services/media-stack.nix;
+      file-sharing = ./services/file-sharing.nix;
+      backup-target = ./services/backup-target.nix;
+      monitoring-agent = ./services/monitoring-agent.nix;
+
+      ai = { pkgs, ... }: {
+        imports = [ self.nixosModules.llama-server ];
+        environment.systemPackages = [
+          inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.hermes-agent
+        ];
+      };
+
+      default = { ... }: {
+        imports = [
+          self.nixosModules.llama-server
+          self.nixosModules.k3s
+          self.nixosModules.media-stack
+          self.nixosModules.file-sharing
+          self.nixosModules.backup-target
+          self.nixosModules.monitoring-agent
+        ];
+      };
+    };
+
     nixosConfigurations = let
       lib = nixpkgs.lib;
       hostDirs = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./hosts));
@@ -47,7 +74,7 @@
         nativeBuildInputs = [ pkgs.python3Packages.setuptools ];
         propagatedBuildInputs = [ pkgs.python3Packages.pyyaml ];
         nativeCheckInputs = [ pkgs.python3Packages.pytestCheckHook ];
-        pytestFlagsArray = [ "tests/" ];
+        pytestFlags = [ "tests/" ];
 
         # Runtime dependencies: provision.py shells out to these tools.
         # makeWrapper puts them on PATH so `nix run .#provision` works without
@@ -63,6 +90,33 @@
             ]}
         '';
       };
+    };
+
+    checks.x86_64-linux = let
+      pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      eval = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          self.nixosModules.default
+          self.nixosModules.ai
+          inputs.sops-nix.nixosModules.sops
+          {
+            boot.loader.grub.devices = [ "nodev" ];
+            fileSystems."/" = { device = "nodev"; fsType = "tmpfs"; };
+            system.stateVersion = "24.05";
+          }
+        ];
+      };
+    in {
+      nixos-modules-eval = pkgs.runCommand "eval-check" {} ''
+        # This check simulates an external flake importing our service modules.
+        # It forces evaluation without the `specialArgs = { inherit inputs; }` that
+        # internal hosts get. If a module accidentally references `inputs` directly
+        # or relies on other internal repo state, it will break here, preventing 
+        # regressions for external consumers.
+        ${builtins.seq eval.config.system.build.toplevel.drvPath ""}
+        touch $out
+      '';
     };
   };
 }

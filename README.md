@@ -54,11 +54,35 @@ bin/serverctl switch <role> <ip>
 nixos-rebuild build --flake .#<role>
 ```
 
-Without `--override-input` the placeholder device-id triggers a build-time assertion (see `profiles/base.nix`). Supply a real device-id to evaluate:
+Without `--override-input` the placeholder device-id triggers a build-time assertion (see `profiles/base.nix`). We provide a dummy test device-id so you can evaluate the entire flake cleanly:
 
 ```bash
-nix flake check --override-input device-id path:/tmp/device-<hash>
+nix flake check --override-input device-id path:./device-id/test
 ```
+
+### Consuming from another flake
+
+The service modules in this repository are exposed as `nixosModules` flake outputs so they can be consumed by other flakes (e.g., a desktop configuration).
+
+```nix
+# desktop flake.nix
+inputs.nixos-server.url = "github:YZTangent/nixos-server"; # or a path/git URL
+
+# in the nixosSystem modules list
+inputs.nixos-server.nixosModules.ai
+inputs.nixos-server.nixosModules.k3s
+```
+
+Then configure as on any host in this repo, e.g. `services.llama-server.enable = true;` with a desktop-appropriate instance, and `services.k3s-server.*` options to join the existing cluster.
+
+**Consumer prerequisites:**
+
+- **k3s**: the module references `sops.secrets."k3s-token"` and `sops.secrets."k3s-vrrp-password"`. The consumer must import `sops-nix.nixosModules.sops` and define both keys in its own sops file. 
+  - **Interface Binding**: You must explicitly configure `services.k3s-server.flannelIface` (e.g. `enp3s0` or `wlan0` instead of the default `eth0`). This is strictly required so that `keepalived` and k3s don't accidentally bind to virtual interfaces (like Docker bridges) and instead route cluster traffic correctly over your LAN.
+  - **Virtual IP (VIP)**: The cluster API address `services.k3s-server.vip` defaults to `192.168.1.200`. You only need to set this if your cluster operates on a different VIP.
+  - **Cluster Role**: Set `isFirstNode = false` (the default) to join an existing cluster. Alternatively, you can set `isFirstNode = true` if you are using this machine to bootstrap a brand new cluster (or for disaster recovery if the main servers are down).
+- **llama-server / ai**: no external requirements. `unfree` allowances are not needed (llama-cpp and hermes-agent are free).
+- **media-stack** (if ever enabled externally): requires allowing unfree `jellyfin-ffmpeg` (this repo does it via `allowUnfreePredicate` in `profiles/base.nix`; the consumer must do the same).
 
 ## Directory Layout
 
