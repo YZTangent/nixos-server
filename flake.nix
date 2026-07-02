@@ -92,6 +92,11 @@
       };
     };
 
+    # This check simulates an external flake importing our service modules.
+    # It forces evaluation without the `specialArgs = { inherit inputs; }` that
+    # internal hosts get. If a module accidentally references `inputs` directly
+    # or relies on other internal repo state, it will break here, preventing 
+    # regressions for external consumers.
     checks.x86_64-linux = let
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
       eval = nixpkgs.lib.nixosSystem {
@@ -109,12 +114,7 @@
       };
     in {
       nixos-modules-eval = pkgs.runCommand "eval-check" {} ''
-        # This check simulates an external flake importing our service modules.
-        # It forces evaluation without the `specialArgs = { inherit inputs; }` that
-        # internal hosts get. If a module accidentally references `inputs` directly
-        # or relies on other internal repo state, it will break here, preventing 
-        # regressions for external consumers.
-        ${builtins.seq eval.config.system.build.toplevel.drvPath ""}
+       ${builtins.seq eval.config.system.build.toplevel.drvPath ""}
         touch $out
       '';
     };
