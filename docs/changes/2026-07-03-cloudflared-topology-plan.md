@@ -29,6 +29,7 @@ We will add the `services.cloudflared` configuration to `base.nix`. Since `devic
       "host-${device-id.hostname}" = {
         credentialsFile = config.sops.secrets."cloudflared/host-tunnel.json".path;
         default = "http_status:404";
+        warp-routing.enabled = true;
       };
     };
   };
