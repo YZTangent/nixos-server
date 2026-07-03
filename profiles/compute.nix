@@ -12,4 +12,15 @@
   };
 
   services.monitoring-agent.enable = true;
+
+  # Cloudflare Compute Tunnel (Replica mode for k3s ingress)
+  sops.secrets."cloudflared/compute-tunnel.json" = {};
+
+  services.cloudflared.tunnels."compute-cluster" = {
+    credentialsFile = config.sops.secrets."cloudflared/compute-tunnel.json".path;
+    default = "http_status:404";
+    ingress = {
+      "*" = "http://localhost:80";
+    };
+  };
 }
