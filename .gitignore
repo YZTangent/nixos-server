@@ -2,3 +2,4 @@ result
 .worktrees/
 *__pycache__*
 secrets/*-secrets.yaml
+.worktrees/
