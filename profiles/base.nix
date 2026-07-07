@@ -9,6 +9,7 @@ in
     inputs.disko.nixosModules.disko
     ../disko/os-ext4.nix
     ../modules/device-identity.nix
+    ../services/cloudflare-tunnels.nix
   ];
 
   assertions = [{
@@ -74,7 +75,6 @@ in
       credentialsFile = config.sops.secrets."cloudflared/host-tunnel.json".path;
     };
   };
-  environment.systemPackages = [ pkgs.cloudflared ];
 
 
   system.stateVersion = "26.05";
