@@ -66,14 +66,12 @@ in
   # Cloudflare Host Tunnel (Unique per machine)
   sops.secrets."cloudflared/host-tunnel.json" = {};
   
-  services.cloudflared = {
+  services.nixos-server.cloudflare-tunnels = {
     enable = true;
-    tunnels = {
-      "host-${device-id.hostname}" = {
-        credentialsFile = config.sops.secrets."cloudflared/host-tunnel.json".path;
-        default = "http_status:404";
-        warp-routing.enabled = true;
-      };
+    hostTunnel = {
+      enable = true;
+      name = "host-${device-id.hostname}";
+      credentialsFile = config.sops.secrets."cloudflared/host-tunnel.json".path;
     };
   };
   environment.systemPackages = [ pkgs.cloudflared ];
