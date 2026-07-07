@@ -26,6 +26,8 @@ We will use **Cloudflare Zero Trust (cloudflared)** to handle both public ingres
 
 **Note on Public Workloads:** Because the Compute Tunnel routes traffic blindly to the k3s Traefik ingress controller (using a `"*"` wildcard), **all future public-facing services deployed in k3s MUST include a standard Kubernetes `Ingress` YAML manifest.** This manifest allows Traefik to read the HTTP `Host` header (preserved by `cloudflared`) and route the traffic to the correct internal pod.
 
+*(Note: The binding of the k3s Traefik load balancer to port 80/443 on the host is not explicitly configured in our manifests. It is the native, out-of-the-box behavior of k3s, which automatically deploys the Traefik Helm chart and its corresponding `LoadBalancer` service upon startup).*
+
 Operators will use the Cloudflare WARP client to access private admin services (and private k3s services like internal DNS dashboards).
 
 ## Consequences
