@@ -31,6 +31,7 @@
       file-sharing = ./services/file-sharing.nix;
       backup-target = ./services/backup-target.nix;
       monitoring-agent = ./services/monitoring-agent.nix;
+      cloudflare-tunnels = ./services/cloudflare-tunnels.nix;
 
       ai = { pkgs, ... }: {
         imports = [ self.nixosModules.llama-server ];
@@ -47,6 +48,7 @@
           self.nixosModules.file-sharing
           self.nixosModules.backup-target
           self.nixosModules.monitoring-agent
+          self.nixosModules.cloudflare-tunnels
         ];
       };
     };
