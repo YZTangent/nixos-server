@@ -19,6 +19,16 @@ let
         default = "0.0.0.0";
         description = "Bind address";
       };
+      modelsPreset = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Path to INI preset file for router mode. When set, replaces --models-dir.";
+      };
+      bindReadOnlyPaths = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [];
+        description = "src:dst bind-mounts (read-only) set up by systemd as root in the service namespace, for reaching paths the service user cannot traverse directly (see ADR-0008).";
+      };
       extraArgs = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = [];
@@ -80,11 +90,12 @@ in
 
         serviceConfig = {
           ExecStart = "${pkgs.llama-cpp-vulkan}/bin/llama-server "
-                    + lib.concatStringsSep " " ([
-                      "--models-dir" inst.modelsDir
-                      "--host" inst.host
-                      "--port" (toString inst.port)
-                    ] ++ inst.extraArgs);
+                    + lib.concatStringsSep " " (
+                        (if inst.modelsPreset != null
+                         then [ "--models-preset" inst.modelsPreset ]
+                         else [ "--models-dir" inst.modelsDir ])
+                        ++ [ "--host" inst.host "--port" (toString inst.port) ]
+                        ++ inst.extraArgs);
           User = inst.user;
           Group = "llama";
           Restart = "on-failure";
@@ -92,6 +103,7 @@ in
           ProtectSystem = "strict";
           PrivateTmp = true;
           ReadWritePaths = [ "/var/lib/llama-cpp" ];
+          BindReadOnlyPaths = inst.bindReadOnlyPaths;
         };
       }
     ) cfg.instances;
