@@ -22,6 +22,32 @@
       default = false;
       description = "Whether this node bootstraps the k3s cluster with --cluster-init";
     };
+
+    manifests = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.submodule {
+        options.source = lib.mkOption {
+          type = lib.types.path;
+          description = "Path to a manifest file or directory to auto-deploy via k3s";
+        };
+      });
+      default = {};
+      description = ''
+        Manifest files or directories to symlink into /var/lib/rancher/k3s/server/manifests/.
+        Keys are used to generate symlinks named nixos-managed-<key>.yaml. K3s applies all YAML
+        files found there on startup. Filenames must be unique across all entries — k3s derives
+        AddOn names from filenames and requires them to be unique across the full manifest tree.
+      '';
+    };
+
+    builtinManifests = {
+      dns = {
+        enable = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = "Ship the bundled k8s/dns manifests. Disable to manage DNS outside k3s.";
+        };
+      };
+    };
   };
 
   config = lib.mkIf config.services.k3s-server.enable {
@@ -70,6 +96,32 @@
     networking.firewall = {
       allowedTCPPorts = [ 6443 10250 2379 2380 ];
       allowedUDPPorts = [ 8472 ];
+    };
+
+    systemd.services.k3s.preStart = lib.mkAfter ''
+      mkdir -p /var/lib/rancher/k3s/server/manifests
+      rm -f /var/lib/rancher/k3s/server/manifests/nixos-managed-*
+      ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: manifest: ''
+        ln -sf ${pkgs.runCommand "k3s-manifest-${lib.strings.sanitizeDerivationName name}.yaml" {} ''
+          if [ -d "${manifest.source}" ]; then
+            # Ensure $out exists even if the directory has no manifests
+            touch $out
+            find "${manifest.source}" -type f \( -name '*.yaml' -o -name '*.yml' -o -name '*.json' \) -print0 \
+              | sort -z \
+              | while IFS= read -r -d "" file; do
+                echo "---" >> $out
+                cat "$file" >> $out
+                echo "" >> $out
+              done
+          else
+            cp "${manifest.source}" $out
+          fi
+        ''} "/var/lib/rancher/k3s/server/manifests/nixos-managed-${name}.yaml"
+      '') config.services.k3s-server.manifests)}
+    '';
+
+    services.k3s-server.manifests = lib.mkIf config.services.k3s-server.builtinManifests.dns.enable {
+      "dns".source = ../k8s/dns;
     };
   };
 }
