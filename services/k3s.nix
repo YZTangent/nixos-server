@@ -68,7 +68,7 @@
                    then ""
                    else "https://${config.services.k3s-server.vip}:6443";
       clusterInit = config.services.k3s-server.isFirstNode;
-      extraFlags = "--flannel-iface=${config.services.k3s-server.flannelIface}";
+      extraFlags = "--flannel-iface=${config.services.k3s-server.flannelIface} --tls-san=${config.services.k3s-server.vip}";
     };
 
     services.keepalived = {
@@ -98,7 +98,23 @@
       allowedUDPPorts = [ 8472 ];
     };
 
-    systemd.services.k3s.preStart = lib.mkAfter ''
+    # Derive node-ip at runtime: keepalived places the shared VIP on the same
+    # interface as the node's own address, and k3s refuses to autodetect between
+    # two global IPs. node-ip must stay out of Nix config so the same profile
+    # runs unmodified on every compute node. Written as a config drop-in because
+    # k3s merges config.yaml.d with CLI flags, and flags can't be computed here.
+    systemd.services.k3s.preStart = lib.mkMerge [ (lib.mkBefore ''
+      mkdir -p /etc/rancher/k3s/config.yaml.d
+      node_ip=$(${pkgs.iproute2}/bin/ip -o -4 addr show dev ${config.services.k3s-server.flannelIface} scope global \
+        | ${pkgs.gawk}/bin/awk '{split($4, a, "/"); print a[1]}' \
+        | ${pkgs.gnugrep}/bin/grep -vx '${config.services.k3s-server.vip}' | head -n1)
+      if [ -z "$node_ip" ]; then
+        echo "k3s preStart: no non-VIP global IPv4 on ${config.services.k3s-server.flannelIface} yet" >&2
+        exit 1
+      fi
+      printf 'node-ip: %s\n' "$node_ip" > /etc/rancher/k3s/config.yaml.d/node-ip.yaml
+    '')
+    (lib.mkAfter ''
       mkdir -p /var/lib/rancher/k3s/server/manifests
       rm -f /var/lib/rancher/k3s/server/manifests/nixos-managed-*
       ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: manifest: ''
@@ -118,7 +134,7 @@
           fi
         ''} "/var/lib/rancher/k3s/server/manifests/nixos-managed-${name}.yaml"
       '') config.services.k3s-server.manifests)}
-    '';
+    '') ];
 
     services.k3s-server.manifests = lib.mkIf config.services.k3s-server.builtinManifests.dns.enable {
       "dns".source = ../k8s/dns;
