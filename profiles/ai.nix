@@ -1,8 +1,14 @@
 { config, pkgs, lib, inputs, ... }:
 {
   imports = [
+    ../services/hermes-gateway.nix
     ../services/llama-server.nix
   ];
+
+  services.hermes-gateway = {
+    enable = true;
+    hermesHome = ./hermes-config;
+  };
 
   services.llama-server = {
     enable = true;
