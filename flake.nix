@@ -102,11 +102,17 @@
     # regressions for external consumers.
     checks.x86_64-linux = let
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      checksConfigDir = pkgs.runCommand "hermes-config" {} ''
+        mkdir -p $out
+        touch $out/.env $out/auth.json $out/config.yaml $out/SOUL.md
+      '';  
       eval = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [
           self.nixosModules.default
           self.nixosModules.ai
+          self.nixosModules.hermes-gateway
+          { services.hermes-gateway.hermesHome = checksConfigDir; }
           inputs.sops-nix.nixosModules.sops
           {
             boot.loader.grub.devices = [ "nodev" ];
