@@ -25,6 +25,7 @@
 
   outputs = { self, nixpkgs, disko, nixos-anywhere, ... } @ inputs: {
     nixosModules = {
+      hermes-gateway = ./services/hermes-gateway.nix;
       llama-server = ./services/llama-server.nix;
       k3s = ./services/k3s.nix;
       media-stack = ./services/media-stack.nix;
