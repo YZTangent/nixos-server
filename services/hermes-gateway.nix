@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, inputs, ... }:
 
 let
   cfg = config.services.hermes-gateway;
@@ -39,7 +39,7 @@ in
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
-        ExecStart = "${pkgs.hermes-agent}/bin/hermes gateway";
+        ExecStart = "${inputs.llm-agents.packages.${pkgs.system}.hermes-agent}/bin/hermes gateway";
         User = "hermes";
         Group = "hermes";
         Restart = "on-failure";
