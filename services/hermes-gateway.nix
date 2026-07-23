@@ -20,7 +20,7 @@ in
     # System user for the service
     users.users.hermes = {
       isSystemUser = true;
-      group = "hermes";
+      group = "users";
       home = "/var/lib/hermes";
       createHome = true;
       shell = "/run/current-system/sw/bin/nologin";
@@ -46,7 +46,7 @@ in
         RestartSec = "5";
         NoNewPrivileges = true;
         ProtectSystem = "strict";
-        ProtectHome = "true";
+        ProtectHome = "tmpfs";
         PrivateTmp = true;
         MemoryMax = "2G";
         CPUQuota = "80%";
